@@ -1139,24 +1139,24 @@ module Homebrew
         test "brew", "untap", tap_name
       end
 
-      Keg::MUST_BE_WRITABLE_DIRECTORIES.each(&:mkpath)
-      Pathname.glob("#{HOMEBREW_PREFIX}/**/*").each do |path|
-        next if Keg::MUST_BE_WRITABLE_DIRECTORIES.include?(path)
-        next if path == HOMEBREW_PREFIX/"bin/brew"
-        next if path == HOMEBREW_PREFIX/"var"
-        next if path == HOMEBREW_PREFIX/"var/homebrew"
+      # Keg::MUST_BE_WRITABLE_DIRECTORIES.each(&:mkpath)
+      # Pathname.glob("#{HOMEBREW_PREFIX}/**/*").each do |path|
+      #   next if Keg::MUST_BE_WRITABLE_DIRECTORIES.include?(path)
+      #   next if path == HOMEBREW_PREFIX/"bin/brew"
+      #   next if path == HOMEBREW_PREFIX/"var"
+      #   next if path == HOMEBREW_PREFIX/"var/homebrew"
 
-        path_string = path.to_s
-        next if path_string.start_with?(HOMEBREW_REPOSITORY.to_s)
-        next if path_string.start_with?(@brewbot_root.to_s)
-        next if path_string.start_with?(Dir.pwd.to_s)
-        # don't try to delete osxfuse files
-        next if path_string.match?(
-          "(include|lib)/(lib|osxfuse/|pkgconfig/)?(osx|mac)?fuse(.*\.(dylib|h|la|pc))?$",
-        )
+      #   path_string = path.to_s
+      #   next if path_string.start_with?(HOMEBREW_REPOSITORY.to_s)
+      #   next if path_string.start_with?(@brewbot_root.to_s)
+      #   next if path_string.start_with?(Dir.pwd.to_s)
+      #   # don't try to delete osxfuse files
+      #   next if path_string.match?(
+      #     "(include|lib)/(lib|osxfuse/|pkgconfig/)?(osx|mac)?fuse(.*\.(dylib|h|la|pc))?$",
+      #   )
 
-        FileUtils.rm_rf path
-      end
+      #   FileUtils.rm_rf path
+      # end
 
       if @tap
         checkout_branch_if_needed(HOMEBREW_REPOSITORY)
