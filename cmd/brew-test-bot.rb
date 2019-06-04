@@ -1105,14 +1105,17 @@ module Homebrew
     end
 
     def checkout_branch_if_needed(repository, branch = "master")
+      puts "🍎 ==> inside checkout_branch_if_needed current_branch - before"
       current_branch = Utils.popen_read(
         "git", "-C", repository, "symbolic-ref", "--short", "HEAD"
       ).strip
+      puts "🍎 ==> inside checkout_branch_if_needed current_branch #{current_branch} - #{__LINE__}"
       return if branch == current_branch
 
       checkout_args = [branch]
       checkout_args << "-f" if ARGV.include? "--cleanup"
       test "git", "-C", repository, "checkout", *checkout_args
+      puts "🍎 ==> inside checkout_branch_if_needed git checkout #{checkout_args.blank? ? "undefined" : checkout_args}"
     end
 
     def reset_if_needed(repository)
@@ -1125,8 +1128,11 @@ module Homebrew
 
     def cleanup_shared
       cleanup_git_meta(@repository)
+      puts "🍎 ==> cleanup_git_meta"
       clean_if_needed(@repository)
+      puts "🍎 ==> clean_if_needed"
       prune_if_needed(@repository)
+      puts "🍎 ==> prune_if_needed"
 
       Tap.names.each do |tap_name|
         next if tap_name == @tap&.name
@@ -1136,41 +1142,56 @@ module Homebrew
           next
         end
 
+        puts "🍎 ==> brew untap #{tap_name} - before"
         test "brew", "untap", tap_name
+        puts "🍎 ==> brew untap #{tap_name} - after"
       end
 
+      puts "🍎 ==> Keg::MUST_BE_WRITABLE_DIRECTORIES.each(&:mkpath) - #{__LINE__} - before"
       Keg::MUST_BE_WRITABLE_DIRECTORIES.each(&:mkpath)
-      Pathname.glob("#{HOMEBREW_PREFIX}/**/*").each do |path|
-        next if Keg::MUST_BE_WRITABLE_DIRECTORIES.include?(path)
-        next if path == HOMEBREW_PREFIX/"bin/brew"
-        next if path == HOMEBREW_PREFIX/"var"
-        next if path == HOMEBREW_PREFIX/"var/homebrew"
+      puts "🍎 ==> Keg::MUST_BE_WRITABLE_DIRECTORIES.each(&:mkpath) - #{__LINE__} - after"
+      puts "🍎 ==> Pathname.glob(\"#{HOMEBREW_PREFIX}/**/*\").each do |path| - #{__LINE__} - before"
+      # Pathname.glob("#{HOMEBREW_PREFIX}/**/*").each do |path|
+      #   next if Keg::MUST_BE_WRITABLE_DIRECTORIES.include?(path)
+      #   next if path == HOMEBREW_PREFIX/"bin/brew"
+      #   next if path == HOMEBREW_PREFIX/"var"
+      #   next if path == HOMEBREW_PREFIX/"var/homebrew"
 
-        path_string = path.to_s
-        next if path_string.start_with?(HOMEBREW_REPOSITORY.to_s)
-        next if path_string.start_with?(@brewbot_root.to_s)
-        next if path_string.start_with?(Dir.pwd.to_s)
-        # don't try to delete osxfuse files
-        next if path_string.match?(
-          "(include|lib)/(lib|osxfuse/|pkgconfig/)?(osx|mac)?fuse(.*\.(dylib|h|la|pc))?$",
-        )
-
-        FileUtils.rm_rf path
-      end
+      #   path_string = path.to_s
+      #   next if path_string.start_with?(HOMEBREW_REPOSITORY.to_s)
+      #   next if path_string.start_with?(@brewbot_root.to_s)
+      #   next if path_string.start_with?(Dir.pwd.to_s)
+      #   # don't try to delete osxfuse files
+      #   next if path_string.match?(
+      #     "(include|lib)/(lib|osxfuse/|pkgconfig/)?(osx|mac)?fuse(.*\.(dylib|h|la|pc))?$",
+      #   )
+      #   puts "🍎 ==> FileUtils.rm_rf #{path} - #{__LINE__} - before"
+      #   # FileUtils.rm_rf path
+      #   puts "🍎 ==> FileUtils.rm_rf #{path} - #{__LINE__} - after"
+      # end
+      puts "🍎 ==> Pathname.glob(\"#{HOMEBREW_PREFIX}/**/*\").each do |path| - #{__LINE__} - after"
 
       if @tap
+        puts "🍎 ==> checkout_branch_if_needed(#{HOMEBREW_REPOSITORY} - #{__LINE__} - before"
         checkout_branch_if_needed(HOMEBREW_REPOSITORY)
+        puts "🍎 ==> checkout_branch_if_needed(#{HOMEBREW_REPOSITORY}) - #{__LINE__} - after"
         reset_if_needed(HOMEBREW_REPOSITORY)
+        puts "🍎 ==> reset_if_needed(#{HOMEBREW_REPOSITORY})"
         clean_if_needed(HOMEBREW_REPOSITORY)
+        puts "🍎 ==> clean_if_needed(#{HOMEBREW_REPOSITORY})"
       end
 
       Pathname.glob("#{HOMEBREW_LIBRARY}/Taps/*/*").each do |git_repo|
         cleanup_git_meta(git_repo)
+        puts "🍎 ==> cleanup_git_meta(#{git_repo})"
         next if @repository == git_repo
 
         checkout_branch_if_needed(git_repo)
+        puts "🍎 ==> checkout_branch_if_needed(#{git_repo}) - #{__LINE__}"
         reset_if_needed(git_repo)
+        puts "🍎 ==> reset_if_needed(#{git_repo})"
         prune_if_needed(git_repo)
+        puts "🍎 ==> prune_if_needed(#{git_repo})"
       end
     end
 
@@ -1188,22 +1209,30 @@ module Homebrew
       return unless ARGV.include? "--cleanup"
 
       clear_stash_if_needed(@repository)
+      puts "🍎 ==> clear_stash_if_needed(#{@repository})"
       quiet_system "git", "-C", @repository, "am", "--abort"
+      puts "🍎 ==> quiet_system git am --abort"
       quiet_system "git", "-C", @repository, "rebase", "--abort"
+      puts "🍎 ==> quiet_system git rebase --abort"
 
       unless ARGV.include?("--no-pull")
         checkout_branch_if_needed(@repository)
+        puts "🍎 ==> checkout_branch_if_needed(#{@repository}) - #{__LINE__}"
         reset_if_needed(@repository)
+        puts "🍎 ==> reset_if_needed(#{@repository})"
       end
 
       Pathname.glob("*.bottle*.*").each(&:unlink)
+      puts "🍎 ==> Pathname.glob"
 
       # Cleanup NodeJS headers on Azure Pipeline
       if OS.linux? && ENV["TF_BUILD"]
         test "sudo", "rm", "-rf", "/usr/local/include/node"
       end
 
+      puts "🍎 ==> before cleanup_shared"
       cleanup_shared
+      puts "🍎 ==> after cleanup_shared"
     end
 
     def pkill_if_needed!
